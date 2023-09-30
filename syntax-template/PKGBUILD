@@ -1,0 +1,95 @@
+# Maintainer: Santiago Burgos <santiago.burgos1089@gmail.com>
+# Contributor: Contributor 1 <contributor-e-mail@domain.tld>
+# Contributor: Contributor 2 <contributor-e-mail@domain.tld>
+# All inside the # is a comment and won't be shown or affect the compilation
+# The names of packages must be declared without spaces (use - to separate)
+# Always use information from upstream, unless you create your own customizations
+# You can check https://wiki.archlinux.org/title/PKGBUILD for more information and syntax
+# Also, check another example here: https://gitlab.archlinux.org/pacman/pacman/raw/master/proto/PKGBUILD.proto
+
+pkgname=package-name-that-will-appear-on-aur-search
+_pkgname=other-package-name-designation
+pkgver=x.x.x
+pkgrel=x
+pkgdesc='Description of the package with simple quotes'
+arch=('x86_64','any') #Choose
+url="https://github.com/linuxmint/${_pkgname}" #Example of an URL given by upstream, use double quotes
+license=('GPL3','MIT','GPL2','custom','other')
+depends=(
+    'package1'
+    'package2'
+    'package3'
+    'packagen'
+)
+makedepends=(
+    'package1'
+    'package2'
+    'package3'
+    'packagen'
+)
+optdepends=(
+    'package1: description as to why it might need this optional package'
+    'package2: description as to why it might need this optional package'
+    'packagen: description as to why it might need this optional package'
+)
+provides=(
+    'package1'
+    'package2'
+)
+conflicts=(
+    'package1'
+    'package2'
+)
+options=('!strip') #Optional, add it only if required, else you can remove this line
+backup=("etc/lightdm/${_pkgname}.conf") #Example of a file for pacman to save in case of upgrade/removal
+install="${_pkgname}.install" #Optional file, add it only if required, else you can remove this line
+#It can be only one line, in case you need to use more files then add them as needed
+#Example code and information
+source=(
+    "${_pkgname}-$pkgver.tar.gz::${url}/archive/${pkgver}.tar.gz"
+    "${_pkgname}.conf"
+)
+#It can be only one line, in case you need to use more files then add them as needed
+#Example code and information
+sha256sums=(
+    '2052b85a763290b16cb5439034126cf2156df9ff45ba66fc801d901f0bcdfe34'
+    '5329de3ffc5f1c21b9733f0df1cd8d8ce8e0b084741b57779960cd4c8c4b4df6'
+)
+
+# Y
+
+prepare() {
+    cd "${_pkgname}-${pkgver}"
+    NOCONFIGURE=1 ./autogen.sh
+}
+
+build() {
+    cd "${_pkgname}-${pkgver}"
+    ./configure \
+        --prefix=/usr \
+        --sysconfdir=/etc \
+        --sbindir=/usr/bin \
+        --libexecdir=/usr/lib/lightdm
+    make
+}
+
+package() {
+    cd "${_pkgname}-${pkgver}"
+    make DESTDIR="${pkgdir}" install
+
+    # Download latest Bing wallpaper from internet
+    # Credits to https://forum.linuxconfig.org/t/how-to-download-bing-wallpaper-with-bash-shell-one-liner/3457
+    cd "${srcdir}"
+    wget -O slick-greeter.jpg "http://www.bing.com/$(wget -q -O- https://binged.it/2ZButYc | sed -e 's/<[^>]*>//g' | cut -d / -f2 | cut -d \& -f1)"
+
+    # adjust launcher name
+    mv "${pkgdir}/usr/share/xgreeters/${_pkgname}.desktop" \
+        "${pkgdir}/usr/share/xgreeters/lightdm-slick-greeter.desktop"
+
+    # Install default conf
+    install -Dm644 "${srcdir}/${_pkgname}.conf" -t "${pkgdir}/etc/lightdm/"
+
+    # Installing downloaded Bing wallpaper as slick-greeter wallpaper
+    install -Dm644 "${srcdir}/${_pkgname}.jpg" -t "${pkgdir}/usr/share/${_pkgname}/"
+}
+
